@@ -1,0 +1,137 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/><!DOCTYPE html>
+<html>
+<head>
+    <title>Flappy Bird Mobile</title>
+    <style>
+        /* THE STYLE: This sets up the look of the game */
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #70c5ce; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh;
+        }
+        canvas { 
+            background: #fff; 
+            border: 3px solid #555;
+            max-width: 100%;
+            max-height: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="game"></canvas>
+
+    <script>
+        // THE LOGIC: The 'Brain' of the game
+        const canvas = document.getElementById("game");
+        const ctx = canvas.getContext("2d");
+
+        // Set game size
+        canvas.width = 320;
+        canvas.height = 480;
+
+        // 1. Game Variables
+        let bird = { x: 50, y: 150, w: 20, h: 20, gravity: 0.2, velocity: 0, jump: -4 };
+        let pipes = [];
+        let score = 0;
+        let frame = 0;
+        let isGameOver = false;
+
+        // 2. Input Control (Works for your Phone Screen)
+        window.addEventListener("touchstart", function() {
+            if (isGameOver) reset();
+            bird.velocity = bird.jump;
+        });
+
+        // Also works for PC Spacebar
+        window.addEventListener("keydown", function(e) {
+            if (e.code === "Space") {
+                if (isGameOver) reset();
+                bird.velocity = bird.jump;
+            }
+        });
+
+        function reset() {
+            bird.y = 150;
+            bird.velocity = 0;
+            pipes = [];
+            score = 0;
+            isGameOver = false;
+            loop();
+        }
+
+        // 3. The Game Loop (The Engine)
+        function loop() {
+            if (isGameOver) return;
+
+            // Physics
+            bird.velocity += bird.gravity;
+            bird.y += bird.velocity;
+
+            // Clear Screen
+            ctx.fillStyle = "#70c5ce";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Bird
+            ctx.fillStyle = "yellow";
+            ctx.fillRect(bird.x, bird.y, bird.w, bird.h);
+
+            // Pipe Spawning
+            if (frame % 100 === 0) {
+                let gap = 120;
+                let topH = Math.random() * (canvas.height / 2);
+                pipes.push({ x: canvas.width, top: topH, bottom: topH + gap });
+            }
+
+            // Draw and Move Pipes
+            for (let i = pipes.length - 1; i >= 0; i--) {
+                pipes[i].x -= 2;
+
+                ctx.fillStyle = "green";
+                // Top Pipe
+                ctx.fillRect(pipes[i].x, 0, 50, pipes[i].top);
+                // Bottom Pipe
+                ctx.fillRect(pipes[i].x, pipes[i].bottom, 50, canvas.height);
+
+                // Collision Check
+                if (bird.x + bird.w > pipes[i].x && bird.x < pipes[i].x + 50) {
+                    if (bird.y < pipes[i].top || bird.y + bird.h > pipes[i].bottom) {
+                        gameOver();
+                    }
+                }
+
+                // Point scoring
+                if (pipes[i].x === bird.x) score++;
+
+                // Remove old pipes
+                if (pipes[i].x < -50) pipes.splice(i, 1);
+            }
+
+            // Floor/Ceiling Death
+            if (bird.y > canvas.height || bird.y < 0) gameOver();
+
+            // Draw Score
+            ctx.fillStyle = "black";
+            ctx.font = "20px Arial";
+            ctx.fillText("Score: " + score, 10, 30);
+
+            frame++;
+            requestAnimationFrame(loop);
+        }
+
+        function gameOver() {
+            isGameOver = true;
+            ctx.fillStyle = "rgba(0,0,0,0.5)";
+            ctx.fillRect(0,0, canvas.width, canvas.height);
+            ctx.fillStyle = "white";
+            ctx.fillText("TAP TO RESTART", 80, 240);
+        }
+
+        loop();
+    </script>
+</body>
+</html>
